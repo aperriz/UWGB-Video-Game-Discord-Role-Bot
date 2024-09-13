@@ -1,0 +1,19 @@
+{
+  "roles": [
+    {
+      "role": "artist"
+    },
+    {
+      "role": "programmer"
+    },
+    {
+      "role": "music/sound artist"
+    },
+    {
+      "role": "writer"
+    },
+    {
+      "role": "gamer"
+    }
+  ]
+}
