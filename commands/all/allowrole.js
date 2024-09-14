@@ -1,5 +1,6 @@
-const {SlashCommandBuilder} = require("discord.js");
+const {SlashCommandBuilder, heading} = require("discord.js");
 fs = require('fs');
+helpers = require("../../helpers.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,20 +36,7 @@ module.exports = {
             await interaction.reply({content: "Failed to Allow role!", ephemeral: true});
         }
 
-        const commands = ["showroles", "disallowrole"];
-
-        commands.forEach(c => {
-            console.log(c);
-            const command = interaction.client.commands.get(c);
-
-            delete require.cache[require.resolve(`./${c}.js`)];
-
-            try {
-                const newCommand = require(`./${c}.js`);
-                interaction.client.commands.set(c, newCommand);
-            } catch (error) {
-                console.error(error);
-            }
-        });
+        helpers.reloadCommand(interaction.client.commands.get("showroles"));
+        helpers.reloadCommand(interaction.client.commands.get("disallowrole"));
     }
 }
