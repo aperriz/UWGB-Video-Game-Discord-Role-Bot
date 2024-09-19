@@ -1,8 +1,16 @@
-Initialized log fileRoles shown
-1284309838666399838
-music/sound artist
-G3AR (Jayden)
-music/sound artist
-G3AR (Jayden)
-artist
-G3AR (Jayden)
+Initialized log fileEditing message
+1278446701505679454
+Allowed roles read
+Roles shown
+Buttons: 6
+Embed created
+/cat tag:sorry
+https://cdn.discordapp.com/embed/avatars/2.png
+Set avatar const
+M:\UWGB Roles Bot\commands\all
+M:\UWGB Roles Bot\meme stuff\hawk.png
+/hawk user:704394861159383110
+/cat
+/crazy
+/clear
+DiscordAPIError[10062]: Unknown interaction

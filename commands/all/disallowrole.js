@@ -1,6 +1,6 @@
 const {SlashCommandBuilder, HeadingLevel} = require("discord.js");
 fs = require('fs');
-helpers = require("../../helpers.js");
+helpers = require("../../utility_modules/helpers.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
