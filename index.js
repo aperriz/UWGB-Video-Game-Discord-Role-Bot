@@ -7,11 +7,20 @@ const path = require("node:path");
 const helpers = require("./utility_modules/helpers.js");
 const buttonWrapper = require('./utility_modules/buttonWrapper.js');
 
+fs.copyFile('log.txt', 'last-log.txt',
+	(err) => {
+		if (err) {
+			console.log(err);
+			throw err;
+		}
+		console.log('log.txt was copied to last-log.txt');
+	});
+
 async function createEmbed() {
 	// Parse JSON file
 	da = await fsp.readFile('allowedroles.json', function e() { });
 
-	d = await fsp.readFile('messageInfo.json', function (e) { });
+	d = await fsp.readFile('messageInfo.json', function e() { });
 	j = JSON.parse(d);
 
 	const guild = await client.guilds.fetch(j.guildId);
@@ -59,8 +68,6 @@ async function createEmbed() {
 			, components: buttonWrapper(buttons)
 		};
 
-
-
 	}
 	catch (e) {
 		console.log(e);
@@ -70,7 +77,6 @@ async function createEmbed() {
 
 async function editMessage(status) {
 	fs.appendFile(`log.txt`, `Editing message\n`, function (e) { });
-
 
 	try {
 		d = await fsp.readFile('messageInfo.json', function (e) { });
@@ -117,14 +123,22 @@ async function createCollector() {
 			const member = i.member;
 			if (!member.roles.cache.find(r => r.id === i.customId)) {
 				member.roles.add(i.customId);
-				i.reply({ content: `Added role ${i.guild.roles.cache.find(x => x.id === i.customId).name}!`, ephemeral: true });
+
+				if(!i.replied){
+					await i.reply({ content: `Added role ${i.guild.roles.cache.find(x => x.id === i.customId).name}!`, ephemeral: true });
+				}
+
 				console.log(`${i.guild.roles.cache.find(x => x.id === i.customId).name}\n${i.member.displayName}`);
 				fs.appendFile(`log.txt`, `${i.guild.roles.cache.find(x => x.id === i.customId).name}\n${i.member.displayName}\n`, function (e) { });
 				return;
 			}
 			else {
 				member.roles.remove(i.customId);
-				i.reply({ content: `Removed role ${i.guild.roles.cache.find(x => x.id === i.customId).name}!`, ephemeral: true });
+				
+				if(!i.replied){
+					await i.reply({ content: `Removed role ${i.guild.roles.cache.find(x => x.id === i.customId).name}!`, ephemeral: true });
+				}
+				
 				console.log(`${i.guild.roles.cache.find(x => x.id === i.customId).name}\n${i.member.displayName}`);
 				fs.appendFile(`log.txt`, `${i.guild.roles.cache.find(x => x.id === i.customId).name}\n${i.member.displayName}\n`, function (e) { });
 				return;
@@ -152,10 +166,16 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 helpers.client = client;
 
 // When the client is ready, run this code
-client.once(Events.ClientReady, readyClient => {
+client.once(Events.ClientReady, async readyClient => {
 	helpers.client = client;
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+
+	
+
+	await fsp.writeFile('log.txt', 'Initialized log file\n', function (e) { });
+
 	try {
+		
 		editMessage("alive");
 		createCollector();
 	}
@@ -172,8 +192,6 @@ client.commands = new Collection();
 
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
-
-const log = fs.writeFile(`log.txt`, "Initialized log file", function (e) { });
 
 // Grab all the command files from the commands directory
 for (const folder of commandFolders) {
@@ -223,7 +241,6 @@ client.on(Events.InteractionCreate, async interaction => {
 		console.log(interaction);
 		fs.appendFile(`log.txt`, `${interaction}\n`, function (e) { });
 
-
 	}
 	catch (e) {
 		console.log(e);
@@ -233,7 +250,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 // Listen for crazy
 client.on(Events.MessageCreate, async message => {
-	if (message.content.toUpperCase().contains(" CRAZY ") && message.author.id !== client.user.id) {
+	if (message.content.toUpperCase().contains(" CRAZY ") && message.author.id !== client.user.id && !message.replied) {
 		message.reply("Crazy? I was crazy once... They put me in a rubber room. A rubber room with rats. And the rats made me crazy.");
 	}
 	else if(message.author.id !== client.user.id){
