@@ -1,10 +1,18 @@
 Initialized log file
 Editing message
 1278446701505679454
-Buttons: 6
 Allowed roles read
 Roles shown
+Buttons: 7
 Embed created
-Editing message
+/allowrole role:1288596412749058090
+/reload command:allowrole
+/allowrole role:1288596412749058090
+/reload command:allowroles
+/reload command:allowrole
+/allowrole role:1288596412749058090
 Received SIGINT. Shutting down gracefully...
+Editing message
 Bot is offline
+Received SIGINT. Shutting down gracefully...
+Editing message

@@ -170,8 +170,6 @@ client.once(Events.ClientReady, async readyClient => {
 	helpers.client = client;
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 
-	
-
 	await fsp.writeFile('log.txt', 'Initialized log file\n', function (e) { });
 
 	try {
@@ -238,8 +236,8 @@ client.on(Events.InteractionCreate, async interaction => {
 			}
 		}
 
-		console.log(interaction);
-		fs.appendFile(`log.txt`, `${interaction}\n`, function (e) { });
+		//console.log(interaction);
+		await fsp.appendFile(`log.txt`, `\n\n\n${interaction}\n\n\n`, function (e) { });
 
 	}
 	catch (e) {

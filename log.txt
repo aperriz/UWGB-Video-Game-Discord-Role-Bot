@@ -2,6 +2,12 @@ Initialized log file
 Editing message
 1278446701505679454
 Allowed roles read
+Buttons: 7
 Roles shown
-Buttons: 6
 Embed created
+Pitch Nights
+Alec (aperriz)
+Pitch Nights
+alexial(stephen)
+Pitch Nights
+G3AR (Jayden)
