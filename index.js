@@ -1,11 +1,15 @@
 // Require the necessary discord.js classes
-const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, EmbedBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { token } = require('./config.json');
 const fs = require("node:fs");
 const fsp = require("fs").promises;
 const path = require("node:path");
 const helpers = require("./utility_modules/helpers.js");
 const buttonWrapper = require('./utility_modules/buttonWrapper.js');
+const sql3 = require("sqlite3");
+
+const guildId = 1278446701505679454;
+const db = openDb();
 
 fs.copyFile('log.txt', 'last-log.txt',
 	(err) => {
@@ -159,14 +163,36 @@ async function reloadCommands() {
 	helpers.reloadCommand(client.commands.get("disallowrole"));
 }
 
+function openDb() {
+	return new sql3.Database('./activityDatabase.db', (err) => {
+		if (err) {
+			console.error(err.message);
+		}
+		console.log('Connected to the activityDatabase.db database.');
+	});
+}
+
+async function createTable() {
+	await db.exec(`
+		CREATE TABLE IF NOT EXISTS activity (
+			memberid INTEGER PRIMARY KEY,
+			last_interaction DATETIME
+		)
+	`);
+}
+
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.GuildMembers] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.GuildMembers,
+	 GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 // Set the client in the helpers module
 helpers.client = client;
 
 // When the client is ready, run this code
 client.once(Events.ClientReady, async readyClient => {
+	
+	await createTable();
+
 	helpers.client = client;
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 
@@ -181,6 +207,18 @@ client.once(Events.ClientReady, async readyClient => {
 		console.log(e);
 		fs.appendFile(`log.txt`, `${e}\n`, function (e) { });
 	}
+
+	const guild = client.guilds.cache.get("1278446701505679454");
+	const members = await guild.members.fetch();
+
+	members.forEach(async member => {
+		const stmt = await db.prepare("INSERT OR IGNORE INTO activity (memberid, last_interaction) VALUES (?, ?)");
+		await stmt.run(member.id, new Date().toISOString());
+		await stmt.finalize();
+		updateLastInteraction(member);
+	});
+
+	checkActivity();
 });
 
 // Log in to Discord with your client's token
@@ -208,55 +246,138 @@ for (const folder of commandFolders) {
 	}
 }
 
-// Listen for commands
+// On member join, add unverified role
+client.on(Events.GuildMemberAdd, async member => {
+	console.log(`Member joined: ${member.user.username}`);
+	fs.appendFile(`log.txt`, `Member joined: ${member.user.username}\n`, function (e) { });
+	member.roles.add("1291245256976633907");
+
+	const stmt = db.prepare("INSERT OR IGNORE INTO activity (memberid, last_interaction) VALUES (?, ?)");
+	stmt.run(member.id, new Date().toISOString());
+	stmt.finalize();
+})
+
+client.on(Events.GuildMemberRemove, async member => {
+	const stmt = db.prepare("DELETE FROM activity WHERE memberid = ?");
+	stmt.run(member.id);
+	stmt.finalize();
+});
+
+async function updateLastInteraction(member) {
+	const stmt = db.prepare("UPDATE activity SET last_interaction = ? WHERE memberid = ?");
+	stmt.run(new Date().toISOString(), member.id);
+	stmt.finalize();
+
+	const inactiveRole = member.guild.roles.cache.find(role => role.id === "1335715137864073246"); // Replace with your inactive role ID
+	if (inactiveRole && member.roles.cache.has(inactiveRole.id) && !member.roles.cache.has(1291225788775010398)) {
+		await member.roles.remove(inactiveRole);
+		fs.appendFile(`log.txt`, `Removed inactive role from ${member.user.username}\n`, function (e) { });
+	}
+
+	const activeRole = member.guild.roles.cache.find(role => role.id === "1335715443284901949"); // Replace with your active role ID
+	if (activeRole && !member.roles.cache.has(activeRole.id)) {
+		await member.roles.add(activeRole);
+		fs.appendFile(`log.txt`, `Added active role to ${member.user.username}\n`, function (e) { });
+	}
+}
+
 client.on(Events.InteractionCreate, async interaction => {
-	if (!interaction.isChatInputCommand()) {
-		return;
-	};
+	
+	await updateLastInteraction(interaction.member);
+
+	if (!interaction.isChatInputCommand()) return;
 
 	try {
 		const command = interaction.client.commands.get(interaction.commandName);
-
 		if (!command) {
 			console.error(`No command matching ${interaction.commandName} was found`);
 			fs.appendFile(`log.txt`, `No command matching ${interaction.commandName} was found\n`, function (e) { });
 			return;
 		}
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		if (interaction.replied || interaction.deferred) {
+			await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+			fs.appendFile(`log.txt`, `There was an error while executing this command!\n`, function (e) { });
+		} else {
+			await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+			fs.appendFile(`log.txt`, `There was an error while executing this command!\n`, function (e) { });
+		}
+	}
+});
 
-		try {
-			await command.execute(interaction);
-		} catch (error) {
-			console.error(error);
-			if (interaction.replied || interaction.deferred) {
-				await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
-				fs.appendFile(`log.txt`, `There was an error while executing this command!\n`, function (e) { });
-			} else {
-				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-				fs.appendFile(`log.txt`, `There was an error while executing this command!\n`, function (e) { });
-			}
+client.on(Events.MessageCreate, async message => {
+	if (message.author.bot) return;
+
+	await updateLastInteraction(message.member);
+
+	if (message.content.toLowerCase().includes('crazy')) {
+		if (!message.replied) {
+			await message.reply("Crazy? I was crazy once, They locked me in a room, a rubber room, a rubber room with rats, and rats make me crazy.");
+		}
+	}
+
+	if (message.channel.id === "1291244805560602654" && message.attachments.size > 0) {
+		await new Promise(r => setTimeout(r, 86400000));
+		await message.delete();
+	}
+});
+
+client.on(Events.GuildMemberAdd, async member => {
+	console.log(`Member joined: ${member.user.username}`);
+	fs.appendFile(`log.txt`, `Member joined: ${member.user.username}\n`, function (e) { });
+	member.roles.add("1291245256976633907");
+
+	const stmt = db.prepare("INSERT OR IGNORE INTO activity (memberid, last_interaction) VALUES (?, ?)");
+	stmt.run(member.id, new Date().toISOString());
+	stmt.finalize();
+});
+
+client.on(Events.GuildMemberRemove, async member => {
+	const stmt = db.prepare("DELETE FROM activity WHERE memberid = ?");
+	stmt.run(member.id);
+	stmt.finalize();
+});
+
+async function checkActivity() {
+
+	const oneMonthAgo = new Date();
+	oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+	db.all("SELECT memberid, last_interaction FROM activity", async (err, rows) => {
+		if (err) {
+			console.error(err);
+			fs.appendFile(`log.txt`, `${err}\n`, function (e) { });
+			return;
 		}
 
-		//console.log(interaction);
-		await fsp.appendFile(`log.txt`, `\n\n\n${interaction}\n\n\n`, function (e) { });
+		for (const row of rows) {
+			const lastInteraction = new Date(row.last_interaction);
+			if (lastInteraction < oneMonthAgo) {
+				const guild = client.guilds.cache.get(guildId); // Replace with your guild ID
+				const member = await guild.members.fetch(row.memberid);
+				if (member) {
+					member.roles.add("1335715137864073246"); // Replace with your inactive role ID
+					fs.appendFile(`log.txt`, `Added inactive role to ${member.user.username}\n`, function (e) { });
+				}
+			}
+		}
+	});
 
-	}
-	catch (e) {
-		console.log(e);
-		fs.appendFile(`log.txt`, `${e}\n`, function (e) { });
-	}
-})
+	// Wait a day and check again
+	setTimeout(checkActivity, 86400000);
 
-// Listen for crazy
-client.on(Events.MessageCreate, async message => {
-	if (message.content.toUpperCase().contains(" CRAZY ") && message.author.id !== client.user.id && !message.replied) {
-		message.reply("Crazy? I was crazy once... They put me in a rubber room. A rubber room with rats. And the rats made me crazy.");
-	}
-	else if(message.author.id !== client.user.id){
-		console.log(`${message.author.username}: ${message.content}`);
-		fs.appendFile(`log.txt`, `${message.author.username}: ${message.content}\n`, function (e) { });
-	}
-	console.log(message.content);
-});
+}
+
+
+async function initializeDB(){
+	
+}
+
+/***************************************************************
+********************* Process events ***************************
+***************************************************************/
 
 // Handle process signals
 process.on('SIGINT', async () => {
