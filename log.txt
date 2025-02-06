@@ -29,3 +29,6 @@ Tester
 [Gre(en]by)Knight
 Gamer
 🌟⋆.ೃ࿔*:･
+Editing message
+Received SIGINT. Shutting down gracefully...
+Bot is offline

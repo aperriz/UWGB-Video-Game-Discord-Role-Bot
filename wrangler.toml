@@ -1,0 +1,4 @@
+name = "uwgb-bideo-game-discord-role-bot"
+main = ".\index.js"
+compatibility_date = "2025-02-05"
+compatibility_flags = [ "nodejs_compat" ]
