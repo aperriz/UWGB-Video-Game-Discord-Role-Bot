@@ -5,30 +5,6 @@ Allowed roles read
 Roles shown
 Buttons: 7
 Embed created
-Member joined: sttmccln
-Member joined: sttmccln
-Added active role to sttmccln
-Member joined: lilwinwin
-Member joined: lilwinwin
-Added active role to lilwinwin
-Member joined: kilel96
-Member joined: kilel96
-Added active role to kilel96
-Member joined: mimatakayuki
-Member joined: mimatakayuki
-Added active role to mimatakayuki
-Artist
-🌟⋆.ೃ࿔*:･
-Writer
-🌟⋆.ೃ࿔*:･
-Programmer
-[Gre(en]by)Knight
-Gamer
-[Gre(en]by)Knight
-Tester
-[Gre(en]by)Knight
-Gamer
-🌟⋆.ೃ࿔*:･
-Editing message
 Received SIGINT. Shutting down gracefully...
+Editing message
 Bot is offline

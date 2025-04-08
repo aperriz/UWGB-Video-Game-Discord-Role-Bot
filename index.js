@@ -218,7 +218,7 @@ client.once(Events.ClientReady, async readyClient => {
 		updateLastInteraction(member);
 	});
 
-	checkActivity();
+	// checkActivity();
 });
 
 // Log in to Discord with your client's token

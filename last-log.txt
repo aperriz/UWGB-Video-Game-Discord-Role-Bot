@@ -1,10 +1,14 @@
 Initialized log file
 Editing message
 1278446701505679454
-Allowed roles read
 Roles shown
+Allowed roles read
 Buttons: 7
 Embed created
-Received SIGINT. Shutting down gracefully...
-Editing message
-Bot is offline
+Member joined: cortesss1003
+Member joined: cortesss1003
+Added active role to cortesss1003
+Tester
+Cortesss
+Gamer
+Cortesss
